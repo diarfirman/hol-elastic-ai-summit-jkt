@@ -1,8 +1,8 @@
-# 🚀 Elastic Agent Builder + Gemini Enterprise Hands-on Lab
+# Elastic Agent Builder + Gemini Enterprise Hands-on Lab
 
 Welcome to the **Talk to Your Data** hands-on lab. Today, we are breaking down AI silos by integrating Elastic Agent Builder with Google's Gemini Enterprise using the open A2A (Agent-to-Agent) protocol.
 
-## 🎯 The Objective
+## The Objective
 You will build a specialized "eCommerce Data Analyst" Agent in Elastic that has direct access to your data. Instead of moving petabytes of data to an LLM, you will expose this Agent via the A2A protocol and connect it directly to the Gemini Enterprise UI.
 
 ### Architecture Overview
@@ -20,7 +20,7 @@ flowchart LR
 
 ---
 
-## ☁️ Part 1: Elastic Environment Setup
+## Part 1: Elastic Environment Setup
 
 **Facilitator:** Elastic Team
 
@@ -42,7 +42,7 @@ In this section, we will prepare the Elastic environment by spinning up an Elast
 
 ---
 
-## 🛠️ Part 2: Building the Elastic Agent
+## Part 2: Building the Elastic Agent
 
 **Facilitator:** Elastic Team
 
@@ -75,13 +75,13 @@ POST /_security/api_key
   }
 }
 ```
-> ⚠️ **Note:** Copy the `encoded` value from the response. This is your API Key!
+> **Note:** Copy the `encoded` value from the response. This is your API Key!
 
 ### Step 2: Create a Custom ES|QL Tool
 Let's build an ES|QL tool to query our eCommerce data.
 
 <details>
-<summary><b>👉 Option A: Using Kibana UI</b></summary>
+<summary><b>Option A: Using Kibana UI</b></summary>
 
 1. Navigate to **Agent Builder > Tools**.
 2. Click **Create tool** and select **ES|QL query**.
@@ -98,7 +98,7 @@ Let's build an ES|QL tool to query our eCommerce data.
 </details>
 
 <details>
-<summary><b>👉 Option B: Using Dev Tools API</b></summary>
+<summary><b>Option B: Using Dev Tools API</b></summary>
 
 ```json
 POST kbn:/api/agent_builder/tools
@@ -128,7 +128,7 @@ POST kbn:/api/agent_builder/tools
 Skills define behavioral guidelines for presenting financial reports.
 
 <details>
-<summary><b>👉 Option A: Using Kibana UI</b></summary>
+<summary><b>Option A: Using Kibana UI</b></summary>
 
 1. Go to **Agent Builder > Skills**.
 2. Click **Create Skill**.
@@ -137,7 +137,7 @@ Skills define behavioral guidelines for presenting financial reports.
 </details>
 
 <details>
-<summary><b>👉 Option B: Using Dev Tools API</b></summary>
+<summary><b>Option B: Using Dev Tools API</b></summary>
 
 ```json
 POST kbn:/api/agent_builder/skills
@@ -153,7 +153,7 @@ POST kbn:/api/agent_builder/skills
 ### Step 4: Create the Agent & Assign Tools
 
 <details>
-<summary><b>👉 Option A: Using Kibana UI</b></summary>
+<summary><b>Option A: Using Kibana UI</b></summary>
 
 1. Go to **Agent Builder > Agents** and click **Create Agent**.
 2. Name: `eCommerce Analyst`.
@@ -162,7 +162,7 @@ POST kbn:/api/agent_builder/skills
 </details>
 
 <details>
-<summary><b>👉 Option B: Using Dev Tools API</b></summary>
+<summary><b>Option B: Using Dev Tools API</b></summary>
 
 ```json
 POST kbn:/api/agent_builder/agents
@@ -222,7 +222,7 @@ Before integrating with Gemini, let's test it internally.
 
 ---
 
-## 🤖 Part 3: Gemini Enterprise Integration
+## Part 3: Gemini Enterprise Integration
 
 **Facilitator:** Google Team
 
@@ -242,7 +242,7 @@ Before integrating with Gemini, let's test it internally.
 
 ---
 
-## 🎯 Part 4: Test Your Work
+## Part 4: Test Your Work
 
 ### Scenario 1: Natural Language Analytics
 In Gemini, ask:
@@ -254,7 +254,7 @@ Follow up with a creative task:
 
 ---
 
-## ⚡ Part 5: Actionable Workflows (HITL)
+## Part 5: Actionable Workflows (HITL)
 
 **Facilitator:** Joint
 
@@ -263,7 +263,7 @@ Take your Agent from a "Data Reader" to an "Action Taker" by triggering a Human-
 ### Step 1: Create a Marketing Approval Workflow in Kibana
 
 <details>
-<summary><b>👉 Option A: Using Kibana UI</b></summary>
+<summary><b>Option A: Using Kibana UI</b></summary>
 
 1. Navigate to **Management > Workflows**.
 2. Click **Create Workflow** and switch to the **YAML** tab.
@@ -311,7 +311,7 @@ steps:
 </details>
 
 <details>
-<summary><b>👉 Option B: Using Dev Tools API</b></summary>
+<summary><b>Option B: Using Dev Tools API</b></summary>
 
 ```json
 POST kbn:/api/workflows
