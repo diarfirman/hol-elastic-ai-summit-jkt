@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Guide: Gemini Enterprise & Elastic Agent A2A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        .nav-item { cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background-color: #f3f4f6; }
+        .nav-item.active { background-color: #eff6ff; border-left: 4px solid #005A9E; color: #005A9E; font-weight: 600; }
+        
+        /* Dark Mode overrides for custom elements */
+        .dark .nav-item:hover { background-color: #1e293b; }
+        .dark .nav-item.active { background-color: #1e293b; border-left-color: #3b82f6; color: #60a5fa; }
+        
+        .code-block { background-color: #0f172a; color: #f1f5f9; padding: 1.25rem; border-radius: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.85rem; margin: 0.75rem 0; overflow-x: auto; line-height: 1.5; }
+        .dark .code-block { background-color: #020617; border: 1px solid #1e293b; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Flow animation for the custom diagram lines */
+        @keyframes flow {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+        .flow-line {
+            stroke-dasharray: 10, 10;
+            animation: flow 1.5s linear infinite;
+        }
+    
+        /* Mermaid Dark Mode Fixes */
+        .dark .mermaid .edgeLabel { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        .mermaid .edgeLabel { background-color: #ffffff !important; color: #334155 !important; }
+        .mermaid { display: flex; justify-content: center; font-family: 'Inter', sans-serif; }
+</style>
+    <script>
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelector(`[onclick="showTab('${id}')"]`).classList.add('active');
+            document.getElementById('main-scroll-container').scrollTop = 0;
+        }
+
+        // Sub-tab toggling for Step-by-Step API vs UI options
+        function toggleOption(stepId, optionType) {
+            // optionType is either 'ui' or 'api'
+            const container = document.getElementById(stepId);
+            if (!container) return;
+            
+            const uiBtn = container.querySelector('.opt-btn-ui');
+            const apiBtn = container.querySelector('.opt-btn-api');
+            const uiContent = container.querySelector('.opt-content-ui');
+            const apiContent = container.querySelector('.opt-content-api');
+
+            if (optionType === 'ui') {
+                uiBtn.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
+                uiBtn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+                apiBtn.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
+                apiBtn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+                
+                uiContent.classList.remove('hidden');
+                apiContent.classList.add('hidden');
+            } else {
+                apiBtn.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
+                apiBtn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+                uiBtn.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
+                uiBtn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+                
+                apiContent.classList.remove('hidden');
+                uiContent.classList.add('hidden');
+            }
+        }
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateToggleIcon(false);
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateToggleIcon(true);
+            }
+        }
+
+        function updateToggleIcon(isDark) {
+            const btn = document.getElementById('theme-toggle');
+            if (!btn) return;
+            if (isDark) {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                `;
+            } else {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // Defaults to dark mode
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                updateToggleIcon(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateToggleIcon(false);
+            }
+        });
+
+        // Custom copy command suited for iframe/embedded environments
+        function copyCode(button, elementId) {
+            const codeElement = document.getElementById(elementId);
+            const textToCopy = codeElement.innerText || codeElement.textContent;
+            
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.top = "0";
+            tempTextArea.style.left = "0";
+            tempTextArea.style.position = "fixed";
+            
+            document.body.appendChild(tempTextArea);
+            tempTextArea.focus();
+            tempTextArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = `
+                        <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Copied!
+                    `;
+                    button.classList.remove('bg-gray-800', 'hover:bg-gray-700', 'text-gray-300');
+                    button.classList.add('bg-green-600', 'text-white');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = `
+                            <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            Copy
+                        `;
+                        button.classList.add('bg-gray-800', 'hover:bg-gray-700', 'text-gray-300');
+                        button.classList.remove('bg-green-600', 'text-white');
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Unable to copy code block', err);
+            }
+            
+            document.body.removeChild(tempTextArea);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: "base" });</script>
+</head>
+<body class="bg-gray-50 dark:bg-slate-950 flex h-screen overflow-hidden text-gray-800 dark:text-slate-100 transition-colors duration-200">
+
+    <!-- Sidebar -->
+    <aside class="w-72 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 h-full flex flex-col shadow-sm z-10 transition-colors duration-200">
+        <div class="p-6 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white leading-tight">Elastic Agent Builder + Gemini Enterprise</h1>
+                <p class="text-xs text-gray-500 mt-1 uppercase font-semibold tracking-wider">Hands-on Lab Guide</p>
+            </div>
+            <!-- Interactive Theme Switch Toggle Button -->
+            <button id="theme-toggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-all duration-200" title="Toggle Theme">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li onclick="showTab('intro')" class="nav-item active px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Introduction & Architecture</li>
+                <li onclick="showTab('part1')" class="nav-item px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Part 1: Elastic Environment Setup</li>
+                <li onclick="showTab('part2')" class="nav-item px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Part 2: Building the Elastic Agent</li>
+                <li onclick="showTab('part3')" class="nav-item px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Part 3: Gemini Enterprise Integration</li>
+                <li onclick="showTab('part4')" class="nav-item px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Part 4: Test Your Work</li>
+                <li onclick="showTab('part5')" class="nav-item px-6 py-3 text-sm text-gray-700 dark:text-slate-300">Part 5: Actionable Workflows</li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-gray-200 dark:border-slate-800 text-xs text-center text-gray-400 dark:text-slate-500">
+            Powered by Elastic & Google Cloud
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-scroll-container" class="flex-1 overflow-y-auto p-10 bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
+        <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 p-10 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 min-h-full transition-colors duration-200">
+            
+            <!-- Introduction -->
+            <div id="intro" class="tab-content active">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Introduction & Architecture</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-6 text-lg">Welcome to the <strong>Talk to Your Data</strong> hands-on lab. Today, we are breaking down AI silos by integrating Elastic Agent Builder with Google's Gemini Enterprise using the open A2A (Agent-to-Agent) protocol.</p>
+                
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-slate-200 mt-8 mb-3">The Objective</h3>
+                <p class="text-gray-600 dark:text-slate-400 mb-4">You will build a specialized "eCommerce Data Analyst" Agent in Elastic that has direct access to your data. Instead of moving petabytes of data to an LLM, you will expose this Agent via the A2A protocol and connect it directly to the Gemini Enterprise UI.</p>
+                
+                <div class="bg-indigo-50 dark:bg-indigo-950/20 border-l-4 border-indigo-500 dark:border-indigo-600 p-5 mt-6 mb-6 rounded-r-lg">
+                    <h4 class="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-2">Lab Syllabus & What You Will Learn</h4>
+                    <p class="text-sm text-indigo-800 dark:text-indigo-200 mb-3">By completing this lab, you will learn how to bridge the gap between enterprise search and generative AI without moving your data.</p>
+                    <ul class="list-disc pl-5 space-y-1.5 text-sm text-indigo-700 dark:text-indigo-300">
+                        <li><strong>Environment Provisioning:</strong> Spin up an Elastic Cloud cluster and ingest sample eCommerce datasets.</li>
+                        <li><strong>Deterministic AI Tools:</strong> Create Elastic Agent tools powered by ES|QL for accurate, real-time data aggregation.</li>
+                        <li><strong>Skill Engineering:</strong> Define behavioral guidelines (Skills) dictating how the agent formats and presents financial reports.</li>
+                        <li><strong>A2A Protocol Export:</strong> Assemble the Agent, Tools, and Skills into a standardized A2A (Agent-to-Agent) JSON payload.</li>
+                        <li><strong>Gemini Integration:</strong> Connect your specialized Elastic Agent to Google Gemini Enterprise to enable autonomous multi-agent analytics.</li>
+                        <li><strong>Agentic Actions:</strong> Trigger Kibana Workflows with Human-in-the-Loop directly from Gemini to execute marketing campaigns.</li>
+                    </ul>
+                </div>
+
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-slate-200 mt-8 mb-3">Architecture Overview</h3>
+                <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-lg p-6 mb-6">
+                    
+                    <!-- Mermaid Diagram -->
+                    <div class="mb-8 bg-white dark:bg-slate-950 p-6 rounded-lg shadow-sm border border-blue-100 dark:border-slate-800 transition-colors duration-200 overflow-x-auto">
+                        <div class="mermaid">
+flowchart LR
+    U(("User<br/><small>Asks business questions</small>"))
+    G["Gemini Enterprise<br/><small>Master UI & Orchestrator</small>"]
+    EA["Elastic AI Agent<br/><small>Domain Expert & Tools</small>"]
+    ES[("Elasticsearch<br/><small>kibana_sample_data_ecommerce</small>")]
+    
+    U -->|"Natural Language"| G
+    G <-->|"A2A Protocol"| EA
+    EA -->|"API Key & ES|QL"| ES
+    
+    classDef userNode fill:#f43f5e,stroke:#9f1239,stroke-width:2px,color:#ffffff,font-family:Inter
+    classDef geminiNode fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#ffffff,font-family:Inter
+    classDef agentNode fill:#0d9488,stroke:#115e59,stroke-width:2px,color:#ffffff,font-family:Inter
+    classDef dbNode fill:#334155,stroke:#0f172a,stroke-width:2px,color:#ffffff,font-family:Inter
+    
+    class U userNode
+    class G geminiNode
+    class EA agentNode
+    class ES dbNode
+                        </div>
+                    </div>
+
+                    <ul class="space-y-3 text-gray-700 dark:text-slate-300 border-t border-blue-200 dark:border-blue-900/50 pt-6">
+                        <li><strong class="text-blue-800 dark:text-blue-400">1. Gemini Enterprise:</strong> Acts as the unified User Interface and Master Orchestrator.</li>
+                        <li><strong class="text-blue-800 dark:text-blue-400">2. A2A Protocol:</strong> The open standard communication layer utilizing the Agent Card (JSON) and REST API endpoints.</li>
+                        <li><strong class="text-blue-800 dark:text-blue-400">3. Elastic Agent Builder:</strong> The Domain Expert executing specialized tools (e.g., ES|QL queries) against your data.</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-8 flex justify-end">
+                    <button onclick="showTab('part1')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Start Lab: Part 1 &rarr;</button>
+                </div>
+            </div>
+
+            <!-- Part 1 -->
+            <div id="part1" class="tab-content">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Elastic Facilitator</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 1: Elastic Environment Setup</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium">In this section, we will prepare the Elastic environment by spinning up an Elastic Cloud trial, loading our sample dataset, and ensuring our core AI integrations are configured.</p>
+
+                <div class="space-y-8">
+                    <!-- Step 1: Spin up Trial -->
+                    <div class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 1</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Start an Elastic Cloud Free Trial</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            First, we will provision a fully-managed instance on Elastic Cloud. The trial gives you complete access to Elasticsearch, Kibana, and AI capabilities for 14 days without requiring a credit card.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>Navigate to the <a href="https://www.elastic.co/cloud/cloud-trial-overview" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex inline-flex items-center gap-0.5">Elastic Cloud Trial Page <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a> and click <strong>Start free trial</strong>.</li>
+                                <li>Sign up with your business email or register instantly via your <strong>Google</strong> or Microsoft account.</li>
+                                <li>Once inside the Cloud Console, click <strong>Create deployment</strong>.</li>
+                                <li>Configure your environment details:
+                                    <ul class="list-disc pl-5 mt-1 space-y-1 text-slate-600 dark:text-slate-400">
+                                        <li><strong>Cloud Provider:</strong> Select <strong class="text-slate-800 dark:text-slate-200">Google Cloud (GCP)</strong> to align with your Gemini Enterprise services.</li>
+                                        <li><strong>Deployment Name:</strong> Give it an easily recognizable name (e.g., <code>A2A-Lab-Environment</code>).</li>
+                                        <li><strong>Region:</strong> Choose the region closest to you.</li>
+                                    </ul>
+                                </li>
+                                <li>Click <strong>Create deployment</strong>. While your cloud cluster is spinning up (takes about 3–5 minutes), make sure to copy and save the default <strong class="text-slate-900 dark:text-white font-semibold">elastic</strong> password provided on screen.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Load Sample Data -->
+                    <div class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 2</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Load Sample eCommerce Data</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            We will load a mock eCommerce dataset into Elasticsearch to simulate real-world regional sales, orders, and customer insights.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-1.5">
+                                <li>Once your deployment is ready, click <strong>Continue</strong> or log in directly to your <strong class="text-slate-900 dark:text-slate-100">Kibana</strong> web UI.</li>
+                                <li>From the Kibana Home page, look under the search bar or quick start options and click on <strong>Add integrations & data</strong>.</li>
+                                <li>Click on the <strong>Sample Data</strong> tab on the left margin.</li>
+                                <li>Locate the <strong class="text-slate-900 dark:text-slate-100">Sample eCommerce orders</strong> tile and click <strong>Add data</strong>.</li>
+                                <li>Elasticsearch will instantly spin up a backend index populated with mock commerce transactions (named <code>kibana_sample_data_ecommerce</code>).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Verify LLM Connector -->
+                    <div class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 3</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Verify LLM Connector (Optional)</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            To ensure our Elastic Agent is fully autonomous and capable of generating workflows, reasoning over ES|QL schemas, and executing internal tools, verify an LLM connector is configured.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-1.5">
+                                <li>Use the Kibana left navigation to go to <strong class="text-slate-900 dark:text-slate-100">Stack Management &gt; Connectors</strong>.</li>
+                                <li>Verify if a configured <strong>Google Gemini</strong> Generative AI connector exists. If not, you can create a new connector using your Google Gemini API Key.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-between">
+                    <button onclick="showTab('intro')" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 font-medium py-2 px-4 transition-colors">&larr; Back</button>
+                    <button onclick="showTab('part2')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Next: Build the Agent &rarr;</button>
+                </div>
+            </div>
+
+            <!-- Part 2 -->
+            <div id="part2" class="tab-content">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Elastic Facilitator</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 2: Building the Elastic Agent</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium font-semibold">Follow this comprehensive 6-step roadmap to build, provision, and export your eCommerce Agent. You can choose to configure either via the interactive Kibana UI or using Dev Tools APIs.</p>
+
+                <!-- Steps Container -->
+                <div class="space-y-12">
+
+                    <!-- Step 1: API Key Generation -->
+                    <div id="step-1-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 1</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Generate the API Key</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            The Agent and external platform (Gemini) need authorized access to read the eCommerce index and execute MCP commands. We will generate a least-privilege API key.
+                        </p>
+                        
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-1-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-1-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Stack Management &gt; API keys</strong> from the left sidebar.</li>
+                                    <li>Click on the blue <strong class="text-slate-900 dark:text-slate-100">Create API key</strong> button at the top right.</li>
+                                    <li>Name the key: <code class="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">a2a-ecommerce-api-key</code>.</li>
+                                    <li>Select <strong class="text-slate-900 dark:text-slate-100">Restrict privileges</strong> and switch the editor input to JSON config. Paste the cluster permissions, index read controls, and space application feature locks (provided in Step 1 API query block below).</li>
+                                    <li>Set the expiration parameter to <strong class="text-slate-900 dark:text-slate-100">30 days</strong>.</li>
+                                    <li>Click <strong class="text-blue-600 font-semibold">Create API key</strong> and copy the Base64 value returned.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Navigate to Management &gt; Dev Tools in Kibana. Paste and run the following JSON payload:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step1')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step1" class="code-block">POST /_security/api_key
+{
+  "name": "a2a-ecommerce-api-key",
+  "expiration": "30d",
+  "role_descriptors": {
+    "mcp-access": {
+      "cluster": ["monitor_inference"],
+      "indices": [
+        {
+          "names": ["kibana_sample_data_ecommerce"],
+          "privileges": ["read", "view_index_metadata"]
+        }
+      ],
+      "applications": [
+        {
+          "application": "kibana-.kibana",
+          "privileges": ["feature_agentBuilder.read", "feature_actions.read"],
+          "resources": ["space:default"]
+        }
+      ]
+    }
+  }
+}</pre>
+                            </div>
+                        </div>
+
+                        <!-- Core API Key instructions (must be kept) -->
+                        <div class="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 dark:border-amber-600 p-5 rounded-r-lg space-y-3">
+                            <p class="text-sm text-amber-800 dark:text-amber-200 font-bold flex items-center gap-1.5">
+                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                Important: Copy and Save the Response
+                            </p>
+                            <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                                Save the encoded value from the JSON response immediately. This key will be used as the <strong>Bearer Token</strong> in Gemini Enterprise later.
+                            </p>
+                            <div class="border-t border-amber-200 dark:border-amber-900/50 pt-2.5">
+                                <p class="text-xs text-amber-800 dark:text-amber-200 font-semibold mb-1">Authorization Header Example:</p>
+                                <p class="text-xs text-amber-700 dark:text-amber-400">The header format you will use to register the agent in the next module is:</p>
+                                <div class="bg-amber-100 dark:bg-amber-950/50 p-2.5 rounded font-mono text-xs text-amber-950 dark:text-amber-100 mt-1.5 overflow-x-auto border border-amber-200 dark:border-amber-900/50">
+                                    Authorization: ApiKey cmo4b1JaOEJSemtRd2hZeXdUSE86dHh6cnV2cBDGR3pGbTUwdEd6QjM5UQ==
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Create Custom ES|QL Tool -->
+                    <div id="step-2-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 2</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create a Custom ES|QL Tool</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Next, we will create a custom tool powered by <strong>ES|QL (Elasticsearch Query Language)</strong>. This tool calculates total revenue and order counts grouped by continent, using a dynamic <code>?startTime</code> parameter that the LLM will provide.
+                        </p>
+
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-2-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-2-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Tools</strong> from the left Kibana sidebar.</li>
+                                    <li>Click on <strong class="text-slate-900 dark:text-slate-100">Create tool</strong> at the top right of the dashboard.</li>
+                                    <li>Set the tool type to <strong class="text-slate-900 dark:text-slate-100">ES|QL query</strong>.</li>
+                                    <li>Provide the tool ID: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">esql-revenue-by-region</code>.</li>
+                                    <li>Write the query logic inside the console:
+                                        <div class="bg-slate-100 dark:bg-slate-900 font-mono text-xs p-2.5 rounded my-1 border dark:border-slate-800 overflow-x-auto text-slate-800 dark:text-slate-300 relative group">
+                                            <button onclick="copyCode(this, 'code-esql-ui')" class="absolute top-2 right-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] px-2 py-1 rounded transition-all duration-200 shadow-sm flex items-center">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                                Copy
+                                            </button>
+                                            <pre id="code-esql-ui">FROM kibana_sample_data_ecommerce 
+| WHERE order_date >= ?startTime 
+| STATS total_revenue = SUM(taxful_total_price), total_orders = COUNT(*) BY geoip.continent_name 
+| SORT total_revenue DESC 
+| LIMIT ?limit</pre>
+                                        </div>
+                                    </li>
+                                    <li>Configure tool variables below the query console:
+                                        <ul class="list-disc pl-5 mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-400">
+                                            <li><strong class="text-slate-800 dark:text-slate-200">startTime:</strong> Date format, described as: <em>Start time for the analysis in ISO format</em>.</li>
+                                            <li><strong class="text-slate-800 dark:text-slate-200">limit:</strong> Integer format, described as: <em>Maximum number of results to return</em>.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-semibold">Save</strong> to commit the tool to the library.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the tool registration query in your Dev Tools Console:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step2')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step2" class="code-block">POST kbn:/api/agent_builder/tools
+{
+  "id": "esql-revenue-by-region",
+  "type": "esql",
+  "description": "An ES|QL tool to analyze eCommerce total revenue and order counts grouped by continent, filtered by a start time.",
+  "tags": ["ecommerce", "sales", "esql"],
+  "configuration": {
+    "query": "FROM kibana_sample_data_ecommerce | WHERE order_date >= ?startTime | STATS total_revenue = SUM(taxful_total_price), total_orders = COUNT(*) BY geoip.continent_name | SORT total_revenue DESC | LIMIT ?limit",
+    "params": {
+      "startTime": {
+        "type": "date",
+        "description": "Start time for the analysis in ISO format (e.g., 2026-01-01T00:00:00Z)"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of results to return"
+      }
+    }
+  }
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Create Custom Agent Skill -->
+                    <div id="step-3-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 3</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create a Custom Agent Skill</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Now, create a <strong>Skill</strong> (a set of guidelines/SOP) to instruct the Agent on how to format and present the financial data retrieved by the tool.
+                        </p>
+
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-3-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-3-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Go to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Skills</strong> inside Kibana.</li>
+                                    <li>Click on <strong class="text-slate-900 dark:text-slate-100">Create Skill</strong>.</li>
+                                    <li>Enter Name: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">eCommerce Reporting Guidelines</code>.</li>
+                                    <li>Provide Description: <em class="text-xs text-gray-500 dark:text-slate-400">Rules for presenting eCommerce financial and operational data.</em></li>
+                                    <li>In the **Instruction Content** box, enter the guidelines (provided in Step 3 API query block below).</li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-semibold">Save</strong>.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the following query in Dev Tools:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step3')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step3" class="code-block">POST kbn:/api/agent_builder/skills
+{
+  "id": "ecommerce-presentation-skill",
+  "name": "eCommerce Reporting Guidelines",
+  "description": "Rules for presenting eCommerce financial and operational data.",
+  "content": "When answering questions about eCommerce sales:\n1. Always format 'total_revenue' in USD currency (e.g., $1,500.25).\n2. Mention the 'total_orders' to give context on volume.\n3. Present the regional breakdown in a clean bulleted list or markdown table.\n4. Provide a brief 1-2 sentence business insight summarizing the top-performing region."
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Create the Agent & Assign Tools -->
+                    <div id="step-4-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 4</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create the Agent & Assign Tools</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Let's create the Agent and assign our newly created ES|QL tool alongside several built-in Elastic tools (such as search, workflow execution, etc.).
+                        </p>
+
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-4-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-4-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Agents</strong> from the sidebar.</li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-semibold">Create Agent</strong>.</li>
+                                    <li>Name: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">eCommerce Analyst</code>.</li>
+                                    <li>Describe its personality: <em class="text-xs text-slate-500 dark:text-slate-400">Hi! I am your eCommerce data analyst. Ask me about our sales revenue and regional performance.</em></li>
+                                    <li>In the <strong class="text-slate-900 dark:text-slate-100 font-bold">System Instructions</strong> editor, specify: <em class="text-xs text-slate-500 dark:text-slate-400">"You are an expert eCommerce data analyst. You help users understand sales performance from the kibana_sample_data_ecommerce dataset..."</em></li>
+                                    <li>Scroll to the <strong class="text-slate-900 dark:text-slate-100">Tools</strong> section. Click <strong class="text-blue-600 font-medium">Add Tool</strong>. Check the boxes for:
+                                        <ul class="list-disc pl-5 mt-1 space-y-0.5 text-xs text-slate-600 dark:text-slate-400">
+                                            <li><strong class="text-slate-800 dark:text-slate-200">esql-revenue-by-region</strong> (Your custom tool)</li>
+                                            <li><strong class="text-slate-800 dark:text-slate-200">platform.core.*</strong> utilities (search, workflow, mapping, indices, workflow status).</li>
+                                        </ul>
+                                    </li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-bold">Save</strong> at the bottom.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the following query in Dev Tools:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step4')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step4" class="code-block">POST kbn:/api/agent_builder/agents
+{
+  "id": "elastic-ecommerce-agent",
+  "name": "eCommerce Analyst",
+  "description": "Hi! I am your eCommerce data analyst. Ask me about our sales revenue and regional performance.",
+  "labels": ["ecommerce", "data-analyst", "esql"],
+  "avatar_color": "#F04E98",
+  "avatar_symbol": "EA",
+  "configuration": {
+    "instructions": "You are an expert eCommerce data analyst. You help users understand sales performance from the kibana_sample_data_ecommerce dataset. Use your ES|QL tools to fetch accurate data and apply your reporting skills to present it.",
+    "tools": [
+      {
+        "tool_ids": [
+          "esql-revenue-by-region",
+          "platform.core.search",
+          "platform.core.get_document_by_id",
+          "platform.core.execute_esql",
+          "platform.core.generate_esql",
+          "platform.core.get_index_mapping",
+          "platform.core.list_indices",
+          "platform.core.generate_workflow",
+          "platform.core.execute_workflow",
+          "platform.core.list_workflow_executions",
+          "platform.core.get_workflow_execution_status",
+          "platform.core.resume_workflow_execution"
+        ]
+      }
+    ]
+  }
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Assign the Skill via Kibana UI (Unified UI setup) -->
+                    <div class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 5</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Assign the Skill via Kibana UI</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Due to the API's registry separation for Tools and Skills, we will attach the Skill using the Kibana UI. This gives you a chance to see the visual Agent Builder interface.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <p class="font-semibold text-slate-950 dark:text-slate-200 flex items-center gap-1">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                                Follow these clicks in the UI:
+                            </p>
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>Navigate to the <strong class="text-slate-900 dark:text-slate-100">Agent Builder</strong> tab from the Kibana sidebar.</li>
+                                <li>Click on the <strong class="text-slate-900 dark:text-slate-100">"eCommerce Analyst"</strong> agent you just created.</li>
+                                <li>Scroll down to the <strong class="text-slate-900 dark:text-slate-100">Skills</strong> section.</li>
+                                <li>Click the <strong class="text-blue-600 dark:text-blue-400 font-medium">Add Skill</strong> button.</li>
+                                <li>Select the <strong class="text-slate-900 dark:text-slate-100">"eCommerce Reporting Guidelines"</strong> skill we created in Step 3.</li>
+                                <li>Click <strong class="text-slate-900 dark:text-slate-100 font-bold">Save</strong> at the bottom right.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Step 5 -->
+                    <div class="border-l-4 border-blue-500 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 5</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Assign the Skill via Kibana UI</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Due to registry isolation between platform tools and analytical skills, we will visually bind the presentation guideline to our new agent inside the Kibana Portal.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <p class="font-semibold text-slate-950 dark:text-slate-200 flex items-center gap-1">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                                Follow these clicks in the UI:
+                            </p>
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>Navigate to the <strong class="text-slate-900 dark:text-white">Agent Builder</strong> tab from the Kibana sidebar.</li>
+                                <li>Select and open the newly created <strong class="text-slate-900 dark:text-white">"eCommerce Analyst"</strong> agent card.</li>
+                                <li>Scroll down to the <strong class="text-slate-900 dark:text-white">Skills</strong> panel.</li>
+                                <li>Click <strong class="text-blue-600 dark:text-blue-400 font-medium">Add Skill</strong>.</li>
+                                <li>Pick the <strong class="text-slate-900 dark:text-white">"eCommerce Reporting Guidelines"</strong> skill created in Step 3.</li>
+                                <li>Save the changes using the button at the bottom right.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 6 -->
+                    <div id="step-6-container" class="border-l-4 border-blue-500 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 6</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Verify & Export A2A Configuration</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            This final step is performed <strong>exclusively using Kibana Dev Tools</strong>. The A2A (Agent-to-Agent) protocol compiles our skills, tools, and schema definitions into a unified JSON format that external environments query directly.
+                        </p>
+                        
+                        <div class="bg-gray-100 dark:bg-slate-950 p-4 rounded-lg text-sm text-gray-700 dark:text-slate-300">
+                            Navigate back to <strong class="text-slate-900 dark:text-white">Management &gt; Dev Tools</strong> and run this GET query to fetch your fully assembled A2A Agent Card:
+                        </div>
+
+                        <!-- Code Block wrapper with copy button -->
+                        <div class="relative group my-4">
+                            <button onclick="copyCode(this, 'code-step6')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                Copy
+                            </button>
+                            <pre id="code-step6" class="code-block">GET kbn:/api/agent_builder/a2a/elastic-ecommerce-agent.json</pre>
+                        </div>
+
+                        <div class="bg-green-50 dark:bg-green-950/20 border-l-4 border-green-500 dark:border-green-600 p-4 rounded-r-lg">
+                            <p class="text-sm text-green-800 dark:text-green-200 font-semibold flex items-center gap-1.5">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                Action Required:
+                            </p>
+                            <p class="text-xs text-green-700 dark:text-green-300 mt-1">
+                                Copy the entire JSON response payload from the right-hand panel of Dev Tools and save it locally on your machine. Name the file <strong class="font-bold">elastic-ecommerce-agent.json</strong>. This serves as your Agent Card.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Test the Agent Internally -->
+                    <div id="step-7-container" class="border-l-4 border-blue-500 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 7</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Test the Agent in Kibana UI</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Before integrating with Gemini, let's verify that the agent correctly understands your skills and executes the tools from within Kibana.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>Open the <strong class="text-slate-900 dark:text-white">eCommerce Analyst</strong> agent page in Kibana.</li>
+                                <li>Locate the <strong class="text-slate-900 dark:text-white">Test your agent</strong> chat panel on the right side of the screen.</li>
+                                <li>Paste the following prompt to test its ES|QL tool and formatting skills:</li>
+                            </ul>
+                            <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-3 text-blue-900 dark:text-blue-200 italic rounded-r text-sm">
+                                "What is our total revenue and order count broken down by continent since January 1st, 2026? Please present it according to your reporting guidelines."
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Navigation -->
+                <div class="mt-12 pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-between">
+                    <button onclick="showTab('part1')" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 font-medium py-2 px-4 transition-colors">&larr; Back</button>
+                    <button onclick="showTab('part3')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Next: GCP Integration &rarr;</button>
+                </div>
+            </div>
+
+            <!-- Part 3 -->
+            <div id="part3" class="tab-content">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Google Facilitator</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 3: Gemini Enterprise Integration</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium">With our Elastic Agent ready, we will now ingest it into the Google Cloud ecosystem using the official Elastic AI Agent integration from the Marketplace.</p>
+
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span> Google Cloud Marketplace</h3>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-8 space-y-1">
+                            <li>Log in to your <strong>Google Cloud Console</strong>.</li>
+                            <li>Navigate to the Google Cloud Marketplace.</li>
+                            <li>Search for <strong>Elastic AI Agent</strong> or navigate directly to the <a href="https://console.cloud.google.com/marketplace/product/elastic-prod/elastic-ai-agent" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">product page</a>.</li>
+                            <li>Click <strong>Enable / Configure</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span> Configure A2A Connection</h3>
+                        <p class="text-gray-600 dark:text-slate-400 mt-2 ml-8">Link the marketplace app to your Kibana Agent Builder.</p>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-12 space-y-1">
+                            <li>In the configuration form, input the <strong>Agent Card URL</strong> you copied from Part 2. (Gemini will read this JSON to understand the agent's capabilities).</li>
+                            <li>Input the <strong>Kibana API Key</strong> for authentication.</li>
+                            <li>Save and Sync the configuration.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span> Verification</h3>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-8 space-y-1">
+                            <li>Open your <strong>Gemini Enterprise</strong> chat interface.</li>
+                            <li>Check the available agents/tools list. You should now see <strong>eCommerce Data Analyst</strong> available to be invoked.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-between">
+                    <button onclick="showTab('part2')" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 font-medium py-2 px-4 transition-colors">&larr; Back</button>
+                    <button onclick="showTab('part4')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Next: Live Scenarios &rarr;</button>
+                </div>
+            </div>
+
+            <!-- Part 4 -->
+            <div id="part4" class="tab-content">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Joint Facilitation</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 4: Test Your Work</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium">It's time to see interoperability in action. We will ask Gemini natural language questions, and it will route them to Elastic to fetch the actual data.</p>
+
+                <div class="space-y-8">
+                    <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors duration-200">
+                        <div class="bg-gray-50 dark:bg-slate-950 px-6 py-3 border-b border-gray-200 dark:border-slate-800 font-semibold text-gray-800 dark:text-slate-200">Scenario 1: Natural Language Analytics</div>
+                        <div class="p-6">
+                            <p class="text-gray-600 dark:text-slate-400 mb-4">In the Gemini Enterprise chat interface, ask the following question:</p>
+                            <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 mb-4 text-blue-900 dark:text-blue-200 italic rounded-r">
+                                "Ask the eCommerce Analyst Agent: What is the top-selling clothing category from last week's data?"
+                            </div>
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">What happens under the hood?</h4>
+                            <ol class="list-decimal text-sm text-gray-600 dark:text-slate-400 ml-4 space-y-1">
+                                <li>Gemini reads the prompt and determines the Elastic Agent is the expert.</li>
+                                <li>Gemini sends an A2A request to the Elastic Protocol Endpoint.</li>
+                                <li>The Elastic Agent executes a data search against the <code>kibana_sample_data_ecommerce</code> index.</li>
+                                <li>Elastic returns the structured data to Gemini.</li>
+                                <li>Gemini formats the response into human-readable text for the user.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors duration-200">
+                        <div class="bg-gray-50 dark:bg-slate-950 px-6 py-3 border-b border-gray-200 dark:border-slate-800 font-semibold text-gray-800 dark:text-slate-200">Scenario 2: Multi-Agent Handoff</div>
+                        <div class="p-6">
+                            <p class="text-gray-600 dark:text-slate-400 mb-4">Without leaving the chat, follow up with a creative task based on the data just retrieved:</p>
+                            <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 mb-4 text-blue-900 dark:text-blue-200 italic rounded-r">
+                                "Based on the top-selling items you just found, please draft a promotional marketing email to send to our customers."
+                            </div>
+                            <h4 class="font-semibold text-gray-800 dark:text-white mb-2">Why this matters:</h4>
+                            <p class="text-sm text-gray-600 dark:text-slate-400">This demonstrates true Agentic interoperability. The data retrieved by the Elastic Agent (the domain expert) is seamlessly passed as context back to Gemini's core LLM (the creative expert) to generate marketing copy—all within a single workflow, without any manual copy-pasting or context switching.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-between">
+                    <button onclick="showTab('part3')" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 font-medium py-2 px-4 transition-colors">&larr; Back</button>
+                    <button onclick="showTab('part5')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Next: Actionable Workflows &rarr;</button>
+                </div>
+            </div>
+
+            <!-- Part 5 -->
+            <div id="part5" class="tab-content">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Joint Facilitation</span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 5: Actionable Workflows (HITL)</h2>
+                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium">Take your Agent from a "Data Reader" to an "Action Taker". We will trigger a Human-in-the-Loop (HITL) workflow directly from Gemini to send our marketing campaign draft, pausing for human approval.</p>
+
+                <div class="space-y-8">
+                    <!-- Step 1: Create Workflow -->
+                    <div id="step-5-1-container" class="border-l-4 border-amber-500 dark:border-amber-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 1</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create a Marketing Approval Workflow in Kibana</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            We will build a simple workflow that accepts email content as input, pauses to ask for your permission, and then simulates sending an email.
+                        </p>
+                        
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-5-1-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-5-1-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ul class="list-decimal pl-5 space-y-2">
+                                    <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Management &gt; Workflows</strong> in Kibana.</li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-semibold">Create Workflow</strong>.</li>
+                                    <li>Switch to the <strong class="text-slate-900 dark:text-slate-100">YAML</strong> tab in the editor.</li>
+                                    <li>Paste the following YAML definition:</li>
+                                </ul>
+                                <div class="relative group my-4">
+                                    <button onclick="copyCode(this, 'code-step5-1-ui')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                        Copy
+                                    </button>
+                                    <pre id="code-step5-1-ui" class="code-block">version: "1"
+name: Marketing Campaign Approval
+description: A HITL workflow that pauses for approval before sending a marketing email.
+enabled: true
+triggers:
+  - type: manual
+    inputs:
+      properties:
+        email_draft:
+          type: string
+          description: The generated email draft to be reviewed
+        audience_email:
+          type: string
+          description: The email address to send the campaign to
+      required:
+        - email_draft
+        - audience_email
+steps:
+  - name: ask_approval
+    type: waitForInput
+    with:
+      message: |-
+        Please review the email draft below and approve or reject:
+        
+        {{ inputs.email_draft }}
+        
+        Target audience: {{ inputs.audience_email }}
+      schema:
+        properties:
+          approved:
+            type: boolean
+            description: Approve or reject the campaign
+        required:
+          - approved
+  - name: check_approval
+    type: if
+    condition: "steps.ask_approval.output.response.approved : true"
+    steps:
+      - name: send_campaign_email
+        type: email
+        connector-id: Elastic-Cloud-SMTP
+        with:
+          to:
+            - "{{ inputs.audience_email }}"
+          subject: Marketing Campaign
+          message: "{{ inputs.email_draft }}"
+    else:
+      - name: log_rejection
+        type: console
+        with:
+          message: "Campaign rejected. Email was NOT sent to {{ inputs.audience_email }}"</pre>
+                                </div>
+                                <ul class="list-decimal pl-5 space-y-2 mt-4">
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100 font-bold">Save</strong>, and then make sure to click <strong class="text-slate-900 dark:text-slate-100 font-bold">Enable</strong>.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the following query in Dev Tools to create the workflow programmatically:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step5-1-api')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step5-1-api" class="code-block">POST kbn:/api/workflows
+{
+  "name": "Marketing Campaign Approval",
+  "description": "A HITL workflow that pauses for approval before sending a marketing email.",
+  "enabled": true,
+  "workflow": "version: \"1\"\nname: Marketing Campaign Approval\ndescription: A HITL workflow that pauses for approval before sending a marketing email.\ntriggers:\n  - type: manual\ninputs:\n  email_draft:\n    type: string\n    description: The generated email draft to be reviewed\n  audience_email:\n    type: string\n    description: The email address to send the campaign to\nsteps:\n  - id: ask_approval\n    name: Wait for Approval\n    type: waitForInput\n    with:\n      message: \"Do you approve this marketing email draft to be sent to {{ inputs.audience_email }}?\"\n      schema:\n        type: object\n        properties:\n          approved:\n            type: boolean\n  - id: send_email\n    name: Send Email\n    type: email\n    connector-id: \"elastic-cloud-email\"\n    with:\n      to: [\"{{ inputs.audience_email }}\"]\n      subject: \"Exclusive Marketing Offer\"\n      message: \"{{ inputs.email_draft }}\"\n    if: \"${{ steps.ask_approval.output.approved == true }}\"\n  - id: reject_log\n    name: Log Rejection\n    type: console\n    with:\n      message: \"REJECTED! Email draft was not approved.\"\n    if: \"${{ steps.ask_approval.output.approved == false }}\""
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Update Agent Tools -->
+                    <div class="border-l-4 border-amber-500 dark:border-amber-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 2</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Expose Workflow as a Tool</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Before our agent can trigger this workflow, we must explicitly create a Tool for it and assign it to our Agent.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Tools</strong> and click <strong class="text-slate-900 dark:text-slate-100 font-semibold">Create Tool</strong>.</li>
+                                <li>Name it <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">Send Marketing Campaign</code> and choose <strong class="text-slate-900 dark:text-slate-100">Workflow</strong> as the tool type.</li>
+                                <li>Select the <strong>Marketing Campaign Approval</strong> workflow you just created. Click <strong class="text-slate-900 dark:text-slate-100 font-bold">Save</strong>.</li>
+                                <li>Now, navigate to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Agents</strong> and click your <strong>eCommerce Analyst</strong> agent.</li>
+                                <li>Scroll down to the <strong class="text-slate-900 dark:text-slate-100">Tools</strong> section and click <strong class="text-blue-600 dark:text-blue-400 font-medium">Add Tool</strong>.</li>
+                                <li>Search for and select your new <strong>Send Marketing Campaign</strong> tool. <em>(Note: Ensure the built-in tools <code>platform.core.get_workflow_execution_status</code> and <code>platform.core.resume_workflow_execution</code> are also attached so the agent can handle the HITL approval).</em></li>
+                                <li>Click <strong class="text-slate-900 dark:text-slate-100 font-bold">Save</strong> to update the agent.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Test in Kibana -->
+                    <div class="border-l-4 border-amber-500 dark:border-amber-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 3</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Test the Workflow in Kibana Agent Builder</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Before moving to Gemini, let's test if the agent can successfully orchestrate the workflow natively within Kibana.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                            <ul class="list-decimal pl-5 space-y-2">
+                                <li>While still in the <strong>eCommerce Analyst</strong> agent page, look at the <strong class="text-slate-900 dark:text-slate-100">Test your agent</strong> chat panel on the right.</li>
+                                <li>Type: <em class="text-blue-600 dark:text-blue-400">"Draft a promotional email for men's shoes and execute the Marketing Campaign Approval workflow to send it to my_email@example.com."</em></li>
+                                <li>The agent will "think", call the <code>execute_workflow</code> tool, and then inform you that the workflow is waiting for approval.</li>
+                                <li>Reply in the chat: <em class="text-blue-600 dark:text-blue-400">"Yes, I approve the draft."</em></li>
+                                <li>The agent will call <code>resume_workflow_execution</code> and confirm the email has been sent!</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Triggering via Gemini -->
+                    <div class="border-l-4 border-amber-500 dark:border-amber-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 4</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Trigger the Action from Gemini</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Now that we've verified the Agent's internal logic, let's run the exact same process from our external Gemini Enterprise interface.
+                        </p>
+                        
+                        <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors duration-200 mt-4">
+                            <div class="bg-gray-50 dark:bg-slate-950 px-6 py-3 border-b border-gray-200 dark:border-slate-800 font-semibold text-gray-800 dark:text-slate-200">Scenario 3: Executing Agentic Actions Remotely</div>
+                            <div class="p-6">
+                                <p class="text-gray-600 dark:text-slate-400 mb-4">Send the following prompt in Gemini:</p>
+                                <div class="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 dark:border-amber-600 p-4 mb-4 text-amber-900 dark:text-amber-200 italic rounded-r">
+                                    "Based on the men's shoe sales data rising, please create a promotional email draft. Then, execute the marketing workflow to send it to my_email@example.com, but wait for my approval first."
+                                </div>
+                                <h4 class="font-semibold text-gray-800 dark:text-white mb-2">What happens under the hood?</h4>
+                                <ol class="list-decimal text-sm text-gray-600 dark:text-slate-400 ml-4 space-y-1">
+                                    <li>Gemini routes the complex request to the Elastic Agent via A2A.</li>
+                                    <li>Agent generates the email draft using Gemini's reasoning.</li>
+                                    <li>Agent uses <code>execute_workflow</code> to trigger your Kibana workflow, passing the draft as input.</li>
+                                    <li>The Kibana workflow hits the "Wait for Input" step and pauses.</li>
+                                    <li>Gemini informs you it is waiting for your approval. You can say "Yes, proceed" in Gemini.</li>
+                                    <li>Agent translates your "Yes" into a <code>resume_workflow_execution</code> API call to Kibana to complete the workflow and send the email!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-gray-200 dark:border-slate-800 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Congratulations! 🎉</h3>
+                    <p class="text-gray-600 dark:text-slate-400">You have successfully built an Agentic eCommerce Analytics architecture bridging Elastic and Google Gemini using the A2A Protocol.</p>
+                </div>
+
+                <div class="mt-10 flex justify-between">
+                    <button onclick="showTab('part4')" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 font-medium py-2 px-4 transition-colors">&larr; Back</button>
+                    <div></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
