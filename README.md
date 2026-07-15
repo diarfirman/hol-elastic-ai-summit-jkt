@@ -28,17 +28,41 @@ In this section, we will prepare the Elastic environment by spinning up an Elast
 
 ### Step 1: Start an Elastic Cloud Free Trial
 1. Navigate to the [Elastic Cloud Trial Page](https://www.elastic.co/cloud/cloud-trial-overview) and click **Start free trial**.
-2. Sign up with your business email or Google/Microsoft account.
-3. Once inside the Cloud Console, click **Create deployment**.
-4. Configure your environment details:
-   - **Cloud Provider:** Select **Google Cloud (GCP)**.
-   - **Deployment Name:** e.g., `A2A-Lab-Environment`.
-5. Click **Create Deployment** and wait a few minutes. Save the generated `elastic` username and password.
+   
+   <img width="1929" height="1295" alt="image" src="https://github.com/user-attachments/assets/db6e75f8-e1dc-4ff6-af37-b3ed3834df29" />
+
+3. Sign up with your business email or Google/Microsoft account.
+4. Once inside the Cloud Console, click **Create serverless project**.
+5. Choose Elasticsearch in 'Which type of project would you like to create?'
+   
+   <img width="1915" height="1293" alt="image" src="https://github.com/user-attachments/assets/204dba86-b600-419c-9d2d-36a4c67d30bd" />
+
+7. Configure your environment details:
+   - **Cloud Provider:** Select **Google Cloud (GCP)** and your preferred region.
+   - **Project Name:** e.g., `elastic-ai-summit-lab`.
+     
+    <img width="1912" height="1294" alt="image" src="https://github.com/user-attachments/assets/01663d82-a018-4950-855f-6c889d8f4956" />
+
+8. Click **Create Project** and wait a few minutes.
+
+   <img width="1913" height="1297" alt="image" src="https://github.com/user-attachments/assets/9a07ea59-88e6-437c-bcd1-f3323386aa56" />
+
+9. Click **Open project**
+
+    <img width="1914" height="1294" alt="image" src="https://github.com/user-attachments/assets/77915fbb-6f7e-47c1-8071-d60040a4c4c9" />
 
 ### Step 2: Load Sample eCommerce Data
-1. From the Kibana home page, search for **Sample Data** in the top search bar.
-2. Find the **eCommerce orders** dataset and click **Add data**.
-3. Verify the data is loaded by checking the pre-built dashboards.
+1. From the Kibana home page, click for **View Sample Data** in the **Get started with Elasticsearch** page.
+   
+   <img width="1935" height="1299" alt="image" src="https://github.com/user-attachments/assets/b3aa2291-9647-43a3-b243-1ae131f8f6f7" />
+
+3. Find the **Sample eCommerce orders** dataset and click **Install data**.
+   
+   <img width="1936" height="1303" alt="image" src="https://github.com/user-attachments/assets/2f52a92e-1d68-4376-90f8-4cdf277ae2e9" />
+
+5. Verify the data is loaded by checking the pre-built dashboards.
+   
+   <img width="1935" height="1299" alt="image" src="https://github.com/user-attachments/assets/20bf0f23-e1c1-4302-a97e-4dac8f23d841" />
 
 ---
 
@@ -75,6 +99,8 @@ POST /_security/api_key
   }
 }
 ```
+<img width="1935" height="1300" alt="image" src="https://github.com/user-attachments/assets/8995f5a5-25ec-4a1b-bfc4-d0a52d814b6c" />
+
 > **Note:** Copy the `encoded` value from the response. This is your API Key!
 
 ### Step 2: Create a Custom ES|QL Tool
@@ -83,10 +109,12 @@ Let's build an ES|QL tool to query our eCommerce data.
 <details>
 <summary><b>Option A: Using Kibana UI</b></summary>
 
-1. Navigate to **Agent Builder > Tools**.
-2. Click **Create tool** and select **ES|QL query**.
-3. ID: `esql-revenue-by-region`.
-4. Paste the following query:
+1. Navigate to **Agent Builder > Tools > Manage All Tools > + New Tool** or Type Agents / Tool in global search bar.
+   <img width="1935" height="1304" alt="image" src="https://github.com/user-attachments/assets/e8c0e44a-adf4-42c0-865b-ad51a03dba25" />
+
+3. Click **New tool** and select **ES|QL query** as the type.
+4. ID: `esql-revenue-by-region`.
+5. Paste the following query:
    ```esql
    FROM kibana_sample_data_ecommerce 
    | WHERE order_date >= ?startTime 
@@ -94,7 +122,10 @@ Let's build an ES|QL tool to query our eCommerce data.
    | SORT total_revenue DESC 
    | LIMIT ?limit
    ```
-5. Configure variables: `startTime` (Date) and `limit` (Integer). Save.
+6. Configure variables: `startTime` (Date) and `limit` (Integer). Save. Or the easier way you can click **Infer Parameters** and change the data type accordingly
+   <img width="1934" height="1302" alt="image" src="https://github.com/user-attachments/assets/e5cac8b9-b490-4286-9683-8ade24ca57a8" />
+7. Click **Save**
+
 </details>
 
 <details>
@@ -130,10 +161,13 @@ Skills define behavioral guidelines for presenting financial reports.
 <details>
 <summary><b>Option A: Using Kibana UI</b></summary>
 
-1. Go to **Agent Builder > Skills**.
-2. Click **Create Skill**.
-3. Name: `eCommerce Reporting Guidelines`.
-4. Add formatting instructions (see API payload below for the text) and Save.
+1. Go to **Agent Builder > Skills > Manage All Skills**. Or you can search in global search bar
+2. Click **+ New Skill**.
+
+   <img width="1938" height="1300" alt="image" src="https://github.com/user-attachments/assets/1d8b4540-900e-4ba0-a21f-adbce3834bc7" />
+
+4. ID : 'ecommerce-presentation-skill' Name: `eCommerce Reporting Guidelines`.
+5. Add formatting instructions (see API payload below for the text) and Save.
 </details>
 
 <details>
@@ -148,6 +182,8 @@ POST kbn:/api/agent_builder/skills
   "content": "When answering questions about eCommerce sales:\n1. Always format 'total_revenue' in USD currency (e.g., $1,500.25).\n2. Mention the 'total_orders' to give context on volume.\n3. Present the regional breakdown in a clean bulleted list or markdown table.\n4. Provide a brief 1-2 sentence business insight summarizing the top-performing region."
 }
 ```
+<img width="1935" height="1301" alt="image" src="https://github.com/user-attachments/assets/36b6de88-d1ec-4859-9a6c-213de312cdb4" />
+
 </details>
 
 ### Step 4: Create the Agent & Assign Tools
@@ -158,7 +194,13 @@ POST kbn:/api/agent_builder/skills
 1. Go to **Agent Builder > Agents** and click **Create Agent**.
 2. Name: `eCommerce Analyst`.
 3. Provide system instructions defining its role.
-4. Add Tools: Check `esql-revenue-by-region` and all `platform.core.*` utilities. Save.
+
+   <img width="1937" height="1300" alt="image" src="https://github.com/user-attachments/assets/fc9c4518-09ad-45f6-a843-6b4bc6f3fd2e" />
+
+5. Add Tools: Check `esql-revenue-by-region` and all `platform.core.*` utilities. Save.
+
+   <img width="1933" height="1300" alt="image" src="https://github.com/user-attachments/assets/2bcd77b6-d982-4e47-afd9-d0b7f0f0249e" />
+
 </details>
 
 <details>
@@ -196,6 +238,8 @@ POST kbn:/api/agent_builder/agents
   }
 }
 ```
+<img width="1936" height="1300" alt="image" src="https://github.com/user-attachments/assets/082007ac-00cf-471c-b673-a1e6187bf0f1" />
+
 </details>
 
 ### Step 5: Assign the Skill via Kibana UI
@@ -203,8 +247,11 @@ POST kbn:/api/agent_builder/agents
 2. Select and open the newly created **"eCommerce Analyst"** agent card.
 3. Scroll down to the **Skills** panel.
 4. Click **Add Skill**.
-5. Pick the **"eCommerce Reporting Guidelines"** skill created in Step 3.
-6. Save the changes.
+
+   <img width="1935" height="1300" alt="image" src="https://github.com/user-attachments/assets/3642562c-0e07-4664-9bc1-73c6d3543350" />
+
+6. Pick the **"ecommerce-presentation-skill"** skill created in Step 3.
+7. Save the changes.
 
 ### Step 6: Verify & Export A2A Configuration
 In **Dev Tools**, run this query to fetch your fully assembled A2A Agent Card:
@@ -212,13 +259,17 @@ In **Dev Tools**, run this query to fetch your fully assembled A2A Agent Card:
 ```json
 GET kbn:/api/agent_builder/a2a/elastic-ecommerce-agent.json
 ```
+<img width="1935" height="1299" alt="image" src="https://github.com/user-attachments/assets/285114ff-dc80-4c29-af0f-7e49cdebf545" />
+
 Copy the JSON response payload and save it locally as `elastic-ecommerce-agent.json`.
 
 ### Step 7: Test the Agent in Kibana UI
 Before integrating with Gemini, let's test it internally.
-1. Open the **eCommerce Analyst** agent page.
-2. In the **Test your agent** chat panel, ask:
-   > *"What is our total revenue and order count broken down by continent since January 1st, 2026? Please present it according to your reporting guidelines."*
+1. Open the **eCommerce Analyst** agent page. Click **Chat**.
+2. In the chat panel, ask:
+   > *"What is our total revenue and order count broken down by continent for last 7 days? Please use our custom tool and present it according to your reporting guidelines."*
+3. You can see how the Agent is working and present the result
+   <img width="1936" height="1299" alt="image" src="https://github.com/user-attachments/assets/489179e0-89c6-4eea-840e-50203926061d" />
 
 ---
 
@@ -265,49 +316,66 @@ Take your Agent from a "Data Reader" to an "Action Taker" by triggering a Human-
 <details>
 <summary><b>Option A: Using Kibana UI</b></summary>
 
-1. Navigate to **Management > Workflows**.
-2. Click **Create Workflow** and switch to the **YAML** tab.
+1. Navigate to **Workflows Tab** and Click **Create Workflow**.
+   
+   <img width="1935" height="1300" alt="image" src="https://github.com/user-attachments/assets/52a9e38b-b627-4b5f-a962-f39e78491b0d" />
+
 3. Paste the following definition and click **Save** and **Enable**:
 ```yaml
 version: "1"
 name: Marketing Campaign Approval
 description: A HITL workflow that pauses for approval before sending a marketing email.
+enabled: true
 triggers:
   - type: manual
-inputs:
-  email_draft:
-    type: string
-    description: The generated email draft to be reviewed
-  audience_email:
-    type: string
-    description: The email address to send the campaign to
+    inputs:
+      properties:
+        email_draft:
+          type: string
+          description: The generated email draft to be reviewed
+        audience_email:
+          type: string
+          description: The email address to send the campaign to
+      required:
+        - email_draft
+        - audience_email
 steps:
-  - id: ask_approval
-    name: Wait for Approval
+  - name: ask_approval
     type: waitForInput
     with:
-      message: "Do you approve this marketing email draft to be sent to {{ inputs.audience_email }}?"
+      message: |-
+        Please review the email draft below and approve or reject:
+
+        {{ inputs.email_draft }}
+
+        Target audience: {{ inputs.audience_email }}
       schema:
-        type: object
         properties:
           approved:
             type: boolean
-  - id: send_email
-    name: Send Email
-    type: email
-    connector-id: "elastic-cloud-email"
-    with:
-      to: ["{{ inputs.audience_email }}"]
-      subject: "Exclusive Marketing Offer"
-      message: "{{ inputs.email_draft }}"
-    if: "${{ steps.ask_approval.output.approved == true }}"
-  - id: reject_log
-    name: Log Rejection
-    type: console
-    with:
-      message: "REJECTED! Email draft was not approved."
-    if: "${{ steps.ask_approval.output.approved == false }}"
+            description: Approve or reject the campaign
+        required:
+          - approved
+  - name: check_approval
+    type: if
+    condition: "steps.ask_approval.output.response.approved : true"
+    steps:
+      - name: send_campaign_email
+        type: email
+        connector-id: Elastic-Cloud-SMTP
+        with:
+          to:
+            - "{{ inputs.audience_email }}"
+          subject: Marketing Campaign
+          message: "{{ inputs.email_draft }}"
+    else:
+      - name: log_rejection
+        type: console
+        with:
+          message: "Campaign rejected. Email was NOT sent to {{ inputs.audience_email }}"
 ```
+<img width="1936" height="1298" alt="image" src="https://github.com/user-attachments/assets/12d00e3d-348d-46af-ab2e-10dbd46f6e14" />
+
 </details>
 
 <details>
@@ -319,25 +387,31 @@ POST kbn:/api/workflows
   "name": "Marketing Campaign Approval",
   "description": "A HITL workflow that pauses for approval before sending a marketing email.",
   "enabled": true,
-  "workflow": "version: \"1\"\nname: Marketing Campaign Approval\ndescription: A HITL workflow that pauses for approval before sending a marketing email.\ntriggers:\n  - type: manual\ninputs:\n  email_draft:\n    type: string\n    description: The generated email draft to be reviewed\n  audience_email:\n    type: string\n    description: The email address to send the campaign to\nsteps:\n  - id: ask_approval\n    name: Wait for Approval\n    type: waitForInput\n    with:\n      message: \"Do you approve this marketing email draft to be sent to {{ inputs.audience_email }}?\"\n      schema:\n        type: object\n        properties:\n          approved:\n            type: boolean\n  - id: send_email\n    name: Send Email\n    type: email\n    connector-id: \"elastic-cloud-email\"\n    with:\n      to: [\"{{ inputs.audience_email }}\"]\n      subject: \"Exclusive Marketing Offer\"\n      message: \"{{ inputs.email_draft }}\"\n    if: \"${{ steps.ask_approval.output.approved == true }}\"\n  - id: reject_log\n    name: Log Rejection\n    type: console\n    with:\n      message: \"REJECTED! Email draft was not approved.\"\n    if: \"${{ steps.ask_approval.output.approved == false }}\""
+  "workflow": "version: \"1\"\nname: Marketing Campaign Approval\ndescription: A HITL workflow that pauses for approval before sending a marketing email.\nenabled: true\ntriggers:\n  - type: manual\n    inputs:\n      properties:\n        email_draft:\n          type: string\n          description: The generated email draft to be reviewed\n        audience_email:\n          type: string\n          description: The email address to send the campaign to\n      required:\n        - email_draft\n        - audience_email\nsteps:\n  - name: ask_approval\n    type: waitForInput\n    with:\n      message: |-\n        Please review the email draft below and approve or reject:\n\n        {{ inputs.email_draft }}\n\n        Target audience: {{ inputs.audience_email }}\n      schema:\n        properties:\n          approved:\n            type: boolean\n            description: Approve or reject the campaign\n        required:\n          - approved\n  - name: check_approval\n    type: if\n    condition: \"steps.ask_approval.output.response.approved : true\"\n    steps:\n      - name: send_campaign_email\n        type: email\n        connector-id: elastic-cloud-email\n        with:\n          to:\n            - \"{{ inputs.audience_email }}\"\n          subject: Exclusive Marketing Offer\n          message: \"{{ inputs.email_draft }}\"\n    else:\n      - name: log_rejection\n        type: console\n        with:\n          message: \"REJECTED! Email draft was not approved for {{ inputs.audience_email }}\""
 }
 ```
 </details>
 
 ### Step 2: Expose Workflow as a Tool
-1. Navigate to **Agent Builder > Tools** and click **Create Tool**.
-2. Name it `Send Marketing Campaign` and choose **Workflow** as the tool type.
-3. Select the **Marketing Campaign Approval** workflow and click **Save**.
+1. Navigate to **Agents / Tools** and click **Create Tool**.
+2. Select **Workflow** as the tool type and choose **Marketing Campaign Approval** workflow
+3. Tool ID `marketing-campaign`, description 'workflows to create and send marketing-campaign', and click **Save**.
 4. Go to **Agent Builder > Agents** and open your **eCommerce Analyst** agent.
-5. In the **Tools** section, click **Add Tool** and select **Send Marketing Campaign**. *(Ensure `platform.core.get_workflow_execution_status` and `platform.core.resume_workflow_execution` are also attached).*
-6. Click **Save**.
+5. In the **Tools** section, click **Add Tool** and select **marketing-campaign**. *(Ensure `platform.core.get_workflow_execution_status` and `platform.core.resume_workflow_execution` are also attached).*
+
+   <img width="1937" height="1301" alt="image" src="https://github.com/user-attachments/assets/ed6b1086-a721-483c-acb6-4235bb5f4c65" />
+
+7. Click **Save**.
 
 ### Step 3: Test the Workflow in Kibana Agent Builder
 1. In the **Test your agent** chat panel, type:
    > *"Draft a promotional email for men's shoes and execute the Marketing Campaign Approval workflow to send it to my_email@example.com."*
 2. The agent will call `execute_workflow` and pause for approval.
-3. Reply: *"Yes, I approve the draft."*
-4. The agent will resume the workflow and send the email!
+3. Reply: *"approve"*
+   <img width="1935" height="1303" alt="image" src="https://github.com/user-attachments/assets/1a7da31e-696a-42e0-af3f-0ce112163e7d" />
+5. The agent will resume the workflow and send the email!
+   <img width="1339" height="715" alt="image" src="https://github.com/user-attachments/assets/931bd9ab-6fbe-4bd4-a647-d0b80b39f71b" />
+
 
 ### Step 4: Trigger the Action from Gemini
 Now, run the exact same process from our external Gemini Enterprise interface:
