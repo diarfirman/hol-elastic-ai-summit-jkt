@@ -1,22 +1,15 @@
 # Elastic Agent Builder + Gemini Enterprise Hands-on Lab
 
-Welcome to the **Talk to Your Data** hands-on lab. Today, we are breaking down AI silos by integrating Elastic Agent Builder with Google's Gemini Enterprise using the open A2A (Agent-to-Agent) protocol.
+<img width="783" height="383" alt="image" src="https://github.com/user-attachments/assets/02a65131-268a-48e1-b4de-c30e8bb5495d" />
+
+Welcome to the **Get Experienced with Elastic Agent Builder + Gemini Enterprises** hands-on lab. Today, we are breaking down AI silos by integrating Elastic Agent Builder with Google's Gemini Enterprise using the open A2A (Agent-to-Agent) protocol.
 
 ## The Objective
 You will build a specialized "eCommerce Data Analyst" Agent in Elastic that has direct access to your data. Instead of moving petabytes of data to an LLM, you will expose this Agent via the A2A protocol and connect it directly to the Gemini Enterprise UI.
 
 ### Architecture Overview
-```mermaid
-flowchart LR
-    U(("User<br/>Asks business questions"))
-    G["Gemini Enterprise<br/>Master UI & Orchestrator"]
-    EA["Elastic AI Agent<br/>Domain Expert & Tools"]
-    ES[("Elasticsearch<br/>kibana_sample_data_ecommerce")]
-    
-    U -->|"Natural Language"| G
-    G <-->|"A2A Protocol"| EA
-    EA -->|"API Key & ES|QL"| ES
-```
+<img width="881" height="570" alt="image" src="https://github.com/user-attachments/assets/259ea854-7c63-4b36-ae0d-f03a3f620c5f" />
+
 
 ---
 
