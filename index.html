@@ -42,10 +42,7 @@
             animation: flow 1.5s linear infinite;
         }
     
-        /* Mermaid Dark Mode Fixes */
-        .dark .mermaid .edgeLabel { background-color: #0f172a !important; color: #f1f5f9 !important; }
-        .mermaid .edgeLabel { background-color: #ffffff !important; color: #334155 !important; }
-        .mermaid { display: flex; justify-content: center; font-family: 'Inter', sans-serif; }
+
 </style>
     <script>
         function showTab(id) {
@@ -167,8 +164,7 @@
             document.body.removeChild(tempTextArea);
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: "base" });</script>
+
 </head>
 <body class="bg-gray-50 dark:bg-slate-950 flex h-screen overflow-hidden text-gray-800 dark:text-slate-100 transition-colors duration-200">
 
@@ -205,6 +201,11 @@
             
             <!-- Introduction -->
             <div id="intro" class="tab-content active">
+                <!-- Banner Image -->
+                <div class="mb-8 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm">
+                    <img src="https://github.com/user-attachments/assets/02a65131-268a-48e1-b4de-c30e8bb5495d" alt="Lab Banner" class="w-full h-auto">
+                </div>
+                
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Introduction & Architecture</h2>
                 <p class="text-gray-600 dark:text-slate-400 mb-6 text-lg">Welcome to the <strong>Talk to Your Data</strong> hands-on lab. Today, we are breaking down AI silos by integrating Elastic Agent Builder with Google's Gemini Enterprise using the open A2A (Agent-to-Agent) protocol.</p>
                 
@@ -228,29 +229,9 @@
                 <h3 class="text-xl font-semibold text-gray-800 dark:text-slate-200 mt-8 mb-3">Architecture Overview</h3>
                 <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-lg p-6 mb-6">
                     
-                    <!-- Mermaid Diagram -->
-                    <div class="mb-8 bg-white dark:bg-slate-950 p-6 rounded-lg shadow-sm border border-blue-100 dark:border-slate-800 transition-colors duration-200 overflow-x-auto">
-                        <div class="mermaid">
-flowchart LR
-    U(("User<br/>Asks business questions"))
-    G["Gemini Enterprise<br/>Master UI & Orchestrator"]
-    EA["Elastic AI Agent<br/>Domain Expert & Tools"]
-    ES[("Elasticsearch<br/>kibana_sample_data_ecommerce")]
-    
-    U -->|"Natural Language"| G
-    G <-->|"A2A Protocol"| EA
-    EA -->|"API Key & ES|QL"| ES
-    
-    classDef userNode fill:#f43f5e,stroke:#9f1239,stroke-width:2px,color:#ffffff,font-family:Inter
-    classDef geminiNode fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#ffffff,font-family:Inter
-    classDef agentNode fill:#0d9488,stroke:#115e59,stroke-width:2px,color:#ffffff,font-family:Inter
-    classDef dbNode fill:#334155,stroke:#0f172a,stroke-width:2px,color:#ffffff,font-family:Inter
-    
-    class U userNode
-    class G geminiNode
-    class EA agentNode
-    class ES dbNode
-                        </div>
+                    <!-- Architecture Diagram -->
+                    <div class="mb-8 bg-white dark:bg-slate-950 p-6 rounded-lg shadow-sm border border-blue-100 dark:border-slate-800 transition-colors duration-200 flex justify-center">
+                        <img src="https://github.com/user-attachments/assets/259ea854-7c63-4b36-ae0d-f03a3f620c5f" alt="Architecture Diagram" class="max-w-full h-auto rounded-lg shadow-sm">
                     </div>
 
                     <ul class="space-y-3 text-gray-700 dark:text-slate-300 border-t border-blue-200 dark:border-blue-900/50 pt-6">
