@@ -94,7 +94,7 @@ POST /_security/api_key
 ```
 <img width="1935" height="1300" alt="image" src="https://github.com/user-attachments/assets/8995f5a5-25ec-4a1b-bfc4-d0a52d814b6c" />
 
-> **Note:** Copy the `encoded` value from the response. This is your API Key!
+> **Note:** Copy the `encoded` value from the response. This is your API Key! Kibana accept the format : headers "Authorization" = "ApiKey {encoded api key}"
 
 ### Step 2: Create a Custom ES|QL Tool
 Let's build an ES|QL tool to query our eCommerce data.
