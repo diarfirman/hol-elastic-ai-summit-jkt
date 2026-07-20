@@ -42,7 +42,10 @@
             animation: flow 1.5s linear infinite;
         }
     
-
+        /* Mermaid Dark Mode Fixes */
+        .dark .mermaid .edgeLabel { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        .mermaid .edgeLabel { background-color: #ffffff !important; color: #334155 !important; }
+        .mermaid { display: flex; justify-content: center; font-family: 'Inter', sans-serif; }
 </style>
     <script>
         function showTab(id) {
@@ -164,7 +167,8 @@
             document.body.removeChild(tempTextArea);
         }
     </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: "base" });</script>
 </head>
 <body class="bg-gray-50 dark:bg-slate-950 flex h-screen overflow-hidden text-gray-800 dark:text-slate-100 transition-colors duration-200">
 
@@ -356,19 +360,203 @@
                     <div id="step-1-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
                         <div class="flex items-center gap-2">
                             <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 1</span>
-                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Generate the API Key</h3>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Generate an API Key</h3>
                         </div>
                         <p class="text-gray-600 dark:text-slate-400 text-sm">
-                            The Agent and external platform (Gemini) need authorized access to read the eCommerce index and execute MCP commands. We will generate a least-privilege API key.
+                            Agent and platform external (Gemini) need access to read the index and execute MCP.
+                        </p>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                            <p class="mb-2">Open Kibana <strong class="text-slate-900 dark:text-slate-100">Dev Tools</strong> and run:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step1')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step1" class="code-block">POST /_security/api_key
+{
+  "name": "a2a-ecommerce-api-key",
+  "expiration": "30d",
+  "role_descriptors": {
+    "mcp-access": {
+      "cluster": ["monitor_inference"],
+      "indices": [
+        {
+          "names": ["kibana_sample_data_ecommerce", "*"],
+          "privileges": ["read", "view_index_metadata"]
+        }
+      ],
+      "applications": [
+        {
+          "application": "kibana-.kibana",
+          "privileges": ["feature_agentBuilder.read", "feature_actions.read"],
+          "resources": ["space:default"]
+        }
+      ]
+    }
+  }
+}</pre>
+                            </div>
+                            <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm">
+                                <img src="https://github.com/user-attachments/assets/8995f5a5-25ec-4a1b-bfc4-d0a52d814b6c" alt="Screenshot" class="w-full h-auto">
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 mt-4 text-blue-900 dark:text-blue-200 text-sm rounded-r">
+                                <strong>Note:</strong> Copy the <code class="font-mono bg-blue-100 dark:bg-blue-900 px-1 rounded">encoded</code> value from the response. This is your API Key! Kibana accept the format : headers "Authorization" = "ApiKey {encoded api key}"
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Create a Custom ES|QL Tool -->
+                    <div id="step-2-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 2</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create a Custom ES|QL Tool</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Let's build an ES|QL tool to query our eCommerce data.
                         </p>
                         
                         <!-- Tabs Interface -->
                         <div class="border-b border-gray-200 dark:border-slate-800">
                             <nav class="flex space-x-4" aria-label="Tabs">
-                                <button onclick="toggleOption('step-1-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                <button onclick="toggleOption('step-2-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
                                     🖥️ Kibana UI Guide
                                 </button>
-                                <button onclick="toggleOption('step-1-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                <button onclick="toggleOption('step-2-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Navigate to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Tools &gt; Manage All Tools &gt; + New Tool</strong> or Type Agents / Tool in global search bar.</li>
+                                    <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/e8c0e44a-adf4-42c0-865b-ad51a03dba25" alt="Screenshot" class="w-full h-auto"></div>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100">New tool</strong> and select <strong class="text-slate-900 dark:text-slate-100">ES|QL query</strong> as the type.</li>
+                                    <li>ID: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">esql-revenue-by-region</code>.</li>
+                                    <li>Paste the following query:
+                                        <pre class="bg-slate-800 text-slate-200 p-3 rounded-lg mt-2 overflow-x-auto">FROM kibana_sample_data_ecommerce 
+| WHERE order_date >= ?startTime 
+| STATS total_revenue = SUM(taxful_total_price), total_orders = COUNT(*) BY geoip.continent_name 
+| SORT total_revenue DESC 
+| LIMIT ?limit</pre>
+                                    </li>
+                                    <li>Configure variables: <code>startTime</code> (Date) and <code>limit</code> (Integer). Save. Or the easier way you can click <strong class="text-slate-900 dark:text-slate-100">Infer Parameters</strong> and change the data type accordingly.</li>
+                                    <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/e5cac8b9-b490-4286-9683-8ade24ca57a8" alt="Screenshot" class="w-full h-auto"></div>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100">Save</strong>.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the following query in Dev Tools:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step2')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step2" class="code-block">POST kbn:/api/agent_builder/tools
+{
+  "id": "esql-revenue-by-region",
+  "type": "esql",
+  "description": "An ES|QL tool to analyze eCommerce total revenue and order counts grouped by continent, filtered by a start time.",
+  "tags": ["ecommerce", "sales", "esql"],
+  "configuration": {
+    "query": "FROM kibana_sample_data_ecommerce | WHERE order_date >= ?startTime | STATS total_revenue = SUM(taxful_total_price), total_orders = COUNT(*) BY geoip.continent_name | SORT total_revenue DESC | LIMIT ?limit",
+    "params": {
+      "startTime": {
+        "type": "date",
+        "description": "Start time for the analysis in ISO format (e.g., 2026-01-01T00:00:00Z)"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of results to return"
+      }
+    }
+  }
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Create a Custom Agent Skill -->
+                    <div id="step-3-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 3</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create a Custom Agent Skill</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Skills define behavioral guidelines for presenting financial reports.
+                        </p>
+                        
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-3-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-3-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
+                                    ⚡ Dev Tools API Query
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- UI Option Content -->
+                        <div class="opt-content-ui space-y-3 pt-2">
+                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 text-sm text-slate-700 dark:text-slate-300">
+                                <ol class="list-decimal pl-5 space-y-2">
+                                    <li>Go to <strong class="text-slate-900 dark:text-slate-100">Agent Builder &gt; Skills &gt; Manage All Skills</strong>. Or you can search in global search bar.</li>
+                                    <li>Click <strong class="text-slate-900 dark:text-slate-100">+ New Skill</strong>.</li>
+                                    <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/1d8b4540-900e-4ba0-a21f-adbce3834bc7" alt="Screenshot" class="w-full h-auto"></div>
+                                    <li>ID: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">ecommerce-presentation-skill</code> Name: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded">eCommerce Reporting Guidelines</code>.</li>
+                                    <li>Add formatting instructions (see API payload below for the text) and Save.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- API Option Content -->
+                        <div class="opt-content-api hidden pt-2 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-slate-400 italic">Run the following query in Dev Tools:</p>
+                            <div class="relative group my-4">
+                                <button onclick="copyCode(this, 'code-step3')" class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1.5 rounded transition-all duration-200 shadow-sm border border-gray-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                    Copy
+                                </button>
+                                <pre id="code-step3" class="code-block">POST kbn:/api/agent_builder/skills
+{
+  "id": "ecommerce-presentation-skill",
+  "name": "eCommerce Reporting Guidelines",
+  "description": "Rules for presenting eCommerce financial and operational data.",
+  "content": "When answering questions about eCommerce sales:
+1. Always format 'total_revenue' in USD currency (e.g., $1,500.25).
+2. Mention the 'total_orders' to give context on volume.
+3. Present the regional breakdown in a clean bulleted list or markdown table.
+4. Provide a brief 1-2 sentence business insight summarizing the top-performing region."
+}</pre>
+                            </div>
+                            <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/36b6de88-d1ec-4859-9a6c-213de312cdb4" alt="Screenshot" class="w-full h-auto"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Create the Agent & Assign Tools -->
+                    <div id="step-4-container" class="border-l-4 border-blue-500 dark:border-blue-600 pl-6 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 4</span>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create the Agent & Assign Tools</h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-slate-400 text-sm">
+                            Now we create the agent itself, give it instructions, and equip it with the tools we created.
+                        </p>
+                        
+                        <!-- Tabs Interface -->
+                        <div class="border-b border-gray-200 dark:border-slate-800">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button onclick="toggleOption('step-4-container', 'ui')" class="opt-btn-ui border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                    🖥️ Kibana UI Guide
+                                </button>
+                                <button onclick="toggleOption('step-4-container', 'api')" class="opt-btn-api border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700">
                                     ⚡ Dev Tools API Query
                                 </button>
                             </nav>
@@ -451,12 +639,15 @@
                                 Follow these clicks in the UI:
                             </p>
                             <ul class="list-decimal pl-5 space-y-2">
-                                <li>Navigate to the <strong class="text-slate-900 dark:text-white">Agent Builder</strong> tab from the Kibana sidebar.</li>
+                                <li>Navigate to the <strong class="text-slate-900 dark:text-white">Agent Builder &gt; Agents</strong> tab.</li>
                                 <li>Select and open the newly created <strong class="text-slate-900 dark:text-white">"eCommerce Analyst"</strong> agent card.</li>
                                 <li>Scroll down to the <strong class="text-slate-900 dark:text-white">Skills</strong> panel.</li>
                                 <li>Click <strong class="text-blue-600 dark:text-blue-400 font-medium">Add Skill</strong>.</li>
-                                <li>Pick the <strong class="text-slate-900 dark:text-white">"eCommerce Reporting Guidelines"</strong> skill created in Step 3.</li>
-                                <li>Save the changes using the button at the bottom right.</li>
+                                
+                                <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/3642562c-0e07-4664-9bc1-73c6d3543350" alt="Screenshot" class="w-full h-auto"></div>
+
+                                <li>Pick the <strong class="text-slate-900 dark:text-white">"ecommerce-presentation-skill"</strong> skill created in Step 3.</li>
+                                <li>Save the changes.</li>
                             </ul>
                         </div>
                     </div>
@@ -497,7 +688,11 @@
                         </div>
                     </div>
 
-                    <!-- Step 7: Test the Agent Internally -->
+                    
+
+                </div>
+
+                <!-- Step 7: Test the Agent Internally -->
                     <div id="step-7-container" class="border-l-4 border-blue-500 pl-6 space-y-3">
                         <div class="flex items-center gap-2">
                             <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 7</span>
@@ -517,34 +712,9 @@
                             <ul class="list-decimal pl-5 space-y-2 mt-3">
                                 <li>You can see how the Agent is working and present the result</li>
                             </ul>
-                            
-                                <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/489179e0-89c6-4eea-840e-50203926061d" alt="Screenshot" class="w-full h-auto"></div>
-
+                            <div class="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm"><img src="https://github.com/user-attachments/assets/489179e0-89c6-4eea-840e-50203926061d" alt="Screenshot" class="w-full h-auto"></div>
                         </div>
                     </div>
-
-                    <!-- Step 7: Test the Agent Internally -->
-                    <div id="step-7-container" class="border-l-4 border-blue-500 pl-6 space-y-3">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">STEP 7</span>
-                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Test the Agent in Kibana UI</h3>
-                        </div>
-                        <p class="text-gray-600 dark:text-slate-400 text-sm">
-                            Before integrating with Gemini, let's verify that the agent correctly understands your skills and executes the tools from within Kibana.
-                        </p>
-                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                            <ul class="list-decimal pl-5 space-y-2">
-                                <li>Open the <strong class="text-slate-900 dark:text-white">eCommerce Analyst</strong> agent page in Kibana.</li>
-                                <li>Locate the <strong class="text-slate-900 dark:text-white">Test your agent</strong> chat panel on the right side of the screen.</li>
-                                <li>Paste the following prompt to test its ES|QL tool and formatting skills:</li>
-                            </ul>
-                            <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-3 text-blue-900 dark:text-blue-200 italic rounded-r text-sm">
-                                "What is our total revenue and order count broken down by continent since January 1st, 2026? Please present it according to your reporting guidelines."
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
 
                 <!-- Footer Navigation -->
                 <div class="mt-12 pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-between">
