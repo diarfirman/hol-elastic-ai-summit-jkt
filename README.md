@@ -270,19 +270,45 @@ Before integrating with Gemini, let's test it internally.
 
 **Facilitator:** Google Team
 
-### Step 1: Google Cloud Marketplace
-1. Log in to your **Google Cloud Console**.
-2. Navigate to the Google Cloud Marketplace.
-3. Search for **Elastic AI Agent** and click **Enable / Configure**.
+Gemini Enterprise natively authenticates using Google OAuth2, while Elastic A2A uses API Keys. We will deploy a lightweight Cloud Run proxy to seamlessly translate the authentication between them.
 
-### Step 2: Configure A2A Connection
-1. In the configuration form, input the **Agent Card URL** / upload the `elastic-ecommerce-agent.json` file.
-2. Input the **Kibana API Key** for authentication.
-3. Save and Sync the configuration.
+> **Reference:** The deployment steps and architecture in this section are sourced from the open-source [A2A Proxy project on GitHub](https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy).
 
-### Step 3: Verification
-1. Open your **Gemini Enterprise** chat interface.
-2. Check the available agents/tools list. You should now see **eCommerce Analyst** available to be invoked.
+### Step 1: Create a Google OAuth client
+Gemini Enterprise needs a Google OAuth2 client ID/secret to authenticate end users.
+1. Open an incognito window, go to [console.cloud.google.com](https://console.cloud.google.com), and log in.
+2. Search for **credentials** in the top bar and open **APIs & Services -> Credentials**.
+3. If prompted, create an **OAuth consent screen** (External or Internal).
+4. Click **+ Create credentials** and choose **OAuth client ID**.
+5. Select **Web application** as the application type.
+6. Name it `Elasticsearch`. Under **Authorised redirect URIs**, add: `https://vertexaisearch.cloud.google.com/oauth-redirect`. Click **Create**.
+7. **Copy the Client ID and Client Secret**. You will need these for Gemini Enterprise later.
+
+### Step 2: Deploy the A2A Proxy from Cloud Shell
+1. Click the **Cloud Shell** terminal icon (`>_`) in the top right of the GCP console.
+2. Wait for it to provision, then click **Open editor** in the Cloud Shell toolbar.
+3. Open a terminal inside the editor and run:
+   ```bash
+   git clone https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy.git
+   cd datalabs-workshop-a2aproxy
+   ```
+4. Upload the `elastic-ecommerce-agent.json` file you exported from Kibana in Part 2. Rename it to **`agent-card.json`** and place it next to `deploy.sh`.
+5. Open `deploy.sh` in the editor and replace the `ELASTIC_API_KEY` variable at the top with your encoded Elastic API Key.
+6. Run the deployment script in the terminal:
+   ```bash
+   ./deploy.sh
+   ```
+7. Wait for it to finish and **copy the Service URL** (e.g., `https://a2aproxy-xxx.a.run.app`).
+
+### Step 3: Add the Agent to Gemini Enterprise
+1. Open your **Gemini Enterprise** agent connection setup.
+2. For the Agent Card URL, use your Cloud Run URL appended with the card path: `<service-url>/.well-known/agent-card.json`
+3. Provide the **Client ID** and **Client Secret** from Step 1.
+4. Construct your Authorization URL using your Client ID:
+   ```
+   https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=https://vertexaisearch.cloud.google.com/oauth-redirect&response_type=code&prompt=consent&access_type=offline
+   ```
+5. Save the connection and authorize it. You should now see **eCommerce Analyst** available to be invoked in Gemini.
 
 ---
 
@@ -291,6 +317,14 @@ Before integrating with Gemini, let's test it internally.
 ### Scenario 1: Natural Language Analytics
 In Gemini, ask:
 > *"Ask the eCommerce Analyst Agent: What is the top-selling clothing category from last week's data?"*
+
+**What happens under the hood?**
+1. Gemini reads the prompt and determines the Elastic Agent is the expert.
+2. Gemini sends an A2A request with an OAuth2 token to the **Cloud Run A2A Proxy**.
+3. The A2A Proxy bypasses the OAuth token, injects the Elastic API Key, and forwards it to the Elastic Protocol Endpoint.
+4. The Elastic Agent executes a data search against the `kibana_sample_data_ecommerce` index.
+5. Elastic returns the structured data to Gemini via the proxy.
+6. Gemini formats the response into human-readable text for the user.
 
 ### Scenario 2: Multi-Agent Handoff
 Follow up with a creative task:
