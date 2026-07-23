@@ -732,34 +732,76 @@
                     <span class="bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Google Facilitator</span>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Part 3: Gemini Enterprise Integration</h2>
-                <p class="text-gray-600 dark:text-slate-400 mb-8 font-medium">With our Elastic Agent ready, we will now ingest it into the Google Cloud ecosystem using the official Elastic AI Agent integration from the Marketplace.</p>
+                <p class="text-gray-600 dark:text-slate-400 mb-4 font-medium">Gemini Enterprise natively authenticates using Google OAuth2, while Elastic A2A uses API Keys. We will deploy a lightweight Cloud Run proxy to seamlessly translate the authentication between them.</p>
+
+                <div class="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 dark:border-blue-600 p-4 mb-8 rounded-r">
+                    <p class="text-sm text-blue-900 dark:text-blue-200">
+                        <strong class="font-bold flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> Reference:</strong> 
+                        The deployment steps and architecture in this section are sourced from the open-source <a href="https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy" target="_blank" class="font-semibold underline hover:text-blue-700 dark:hover:text-blue-300">A2A Proxy project on GitHub</a>.
+                    </p>
+                </div>
 
                 <div class="space-y-8">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span> Google Cloud Marketplace</h3>
-                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-8 space-y-1">
-                            <li>Log in to your <strong>Google Cloud Console</strong>.</li>
-                            <li>Navigate to the Google Cloud Marketplace.</li>
-                            <li>Search for <strong>Elastic AI Agent</strong> or navigate directly to the <a href="https://console.cloud.google.com/marketplace/product/elastic-prod/elastic-ai-agent" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">product page</a>.</li>
-                            <li>Click <strong>Enable / Configure</strong>.</li>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span> Create a Google OAuth client</h3>
+                        <p class="text-gray-600 dark:text-slate-400 mt-2 ml-8">Gemini Enterprise needs a Google OAuth2 client ID/secret to authenticate end users.</p>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-12 space-y-3">
+                            <li>Open an incognito window, go to <a href="https://console.cloud.google.com" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">console.cloud.google.com</a>, and log in.</li>
+                            <li>Search for <strong>credentials</strong> in the top bar and open <strong>APIs & Services &rarr; Credentials</strong>.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-3xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/01-search-credentials.png" alt="Search Credentials">
+                            </li>
+                            <li>If prompted, create an <strong>OAuth consent screen</strong> (External or Internal).</li>
+                            <li>Click <strong>+ Create credentials</strong> and choose <strong>OAuth client ID</strong>.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-2xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/02-create-credentials-menu.png" alt="Create Credentials">
+                            </li>
+                            <li>Select <strong>Web application</strong> as the application type.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-2xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/03-application-type.png" alt="App Type">
+                            </li>
+                            <li>Name it <code>Elasticsearch</code>. Under <strong>Authorised redirect URIs</strong>, add: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-sm break-all">https://vertexaisearch.cloud.google.com/oauth-redirect</code>. Click <strong>Create</strong>.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-2xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/04-oauth-client-form.png" alt="Client Form">
+                            </li>
+                            <li><strong>Copy the Client ID and Client Secret</strong>. You will need these for Gemini Enterprise later.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/05-oauth-client-created.png" alt="Client Created">
+                            </li>
                         </ul>
                     </div>
 
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span> Configure A2A Connection</h3>
-                        <p class="text-gray-600 dark:text-slate-400 mt-2 ml-8">Link the marketplace app to your Kibana Agent Builder.</p>
-                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-12 space-y-1">
-                            <li>In the configuration form, input the <strong>Agent Card URL</strong> you copied from Part 2. (Gemini will read this JSON to understand the agent's capabilities).</li>
-                            <li>Input the <strong>Kibana API Key</strong> for authentication.</li>
-                            <li>Save and Sync the configuration.</li>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span> Deploy the A2A Proxy from Cloud Shell</h3>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-12 space-y-3">
+                            <li>Click the <strong>Cloud Shell</strong> terminal icon (<code>&gt;_</code>) in the top right of the GCP console.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-md" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/06-open-cloud-shell.png" alt="Open Cloud Shell">
+                            </li>
+                            <li>Wait for it to provision, then click <strong>Open editor</strong> in the Cloud Shell toolbar.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-md" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/08-open-editor-button.png" alt="Open Editor">
+                            </li>
+                            <li>Open a terminal inside the editor and run:
+                                <pre class="bg-slate-800 text-slate-200 p-3 rounded-lg mt-2 mb-3 overflow-x-auto text-sm">git clone https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy.git
+cd datalabs-workshop-a2aproxy</pre>
+                            </li>
+                            <li>Upload the <code>elastic-ecommerce-agent.json</code> file you exported from Kibana in Part 2. Rename it to <strong><code>agent-card.json</code></strong> and place it next to <code>deploy.sh</code>.<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-3xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/09-cloud-shell-editor.png" alt="Cloud Shell Editor">
+                            </li>
+                            <li>Open <code>deploy.sh</code> in the editor and replace the <code>ELASTIC_API_KEY</code> variable at the top with your encoded Elastic API Key.</li>
+                            <li>Run the deployment script in the terminal:
+                                <pre class="bg-slate-800 text-slate-200 p-3 rounded-lg mt-2 mb-3 overflow-x-auto text-sm">./deploy.sh</pre>
+                            </li>
+                            <li>Wait for it to finish and <strong>copy the Service URL</strong> (e.g., <code>https://a2aproxy-xxx.a.run.app</code>).<br>
+                                <img class="my-3 rounded border border-gray-200 dark:border-slate-700 w-full max-w-2xl" src="https://raw.githubusercontent.com/richardengineeringbrewery/datalabs-workshop-a2aproxy/main/docs/images/11-deploy-sh-output.png" alt="Deploy Output">
+                            </li>
                         </ul>
                     </div>
 
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span> Verification</h3>
-                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-8 space-y-1">
-                            <li>Open your <strong>Gemini Enterprise</strong> chat interface.</li>
-                            <li>Check the available agents/tools list. You should now see <strong>eCommerce Data Analyst</strong> available to be invoked.</li>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2"><span class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span> Add the Agent to Gemini Enterprise</h3>
+                        <ul class="list-disc text-gray-600 dark:text-slate-400 mt-2 ml-12 space-y-2">
+                            <li>Open your <strong>Gemini Enterprise</strong> agent connection setup.</li>
+                            <li>For the Agent Card URL, use your Cloud Run URL appended with the card path: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-sm break-all">&lt;service-url&gt;/.well-known/agent-card.json</code></li>
+                            <li>Provide the <strong>Client ID</strong> and <strong>Client Secret</strong> from Step 1.</li>
+                            <li>Construct your Authorization URL using your Client ID:
+                                <pre class="bg-slate-800 text-slate-200 p-3 rounded-lg mt-2 overflow-x-auto text-sm whitespace-pre-wrap break-all">https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=https://vertexaisearch.cloud.google.com/oauth-redirect&response_type=code&prompt=consent&access_type=offline</pre>
+                            </li>
+                            <li>Save the connection and authorize it. You should now see <strong>eCommerce Analyst</strong> available to be invoked in Gemini.</li>
                         </ul>
                     </div>
                 </div>
@@ -789,9 +831,10 @@
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">What happens under the hood?</h4>
                             <ol class="list-decimal text-sm text-gray-600 dark:text-slate-400 ml-4 space-y-1">
                                 <li>Gemini reads the prompt and determines the Elastic Agent is the expert.</li>
-                                <li>Gemini sends an A2A request to the Elastic Protocol Endpoint.</li>
+                                <li>Gemini sends an A2A request with an OAuth2 token to the <strong>Cloud Run A2A Proxy</strong>.</li>
+                                <li>The A2A Proxy bypasses the OAuth token, injects the Elastic API Key, and forwards it to the Elastic Protocol Endpoint.</li>
                                 <li>The Elastic Agent executes a data search against the <code>kibana_sample_data_ecommerce</code> index.</li>
-                                <li>Elastic returns the structured data to Gemini.</li>
+                                <li>Elastic returns the structured data to Gemini via the proxy.</li>
                                 <li>Gemini formats the response into human-readable text for the user.</li>
                             </ol>
                         </div>
