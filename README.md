@@ -272,7 +272,7 @@ Before integrating with Gemini, let's test it internally.
 
 Gemini Enterprise natively authenticates using Google OAuth2, while Elastic A2A uses API Keys. We will deploy a lightweight Cloud Run proxy to seamlessly translate the authentication between them.
 
-> **Reference:** The deployment steps and architecture in this section are sourced from the open-source [A2A Proxy project on GitHub](https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy).
+> **Reference:** The deployment steps and architecture in this section are sourced from the richardengineeringbrewery/datalabs-workshop-a2aproxy repository [A2A Proxy project on GitHub](https://github.com/richardengineeringbrewery/datalabs-workshop-a2aproxy).
 
 ### Step 1: Create a Google OAuth client
 Gemini Enterprise needs a Google OAuth2 client ID/secret to authenticate end users.
